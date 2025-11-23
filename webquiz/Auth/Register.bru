@@ -1,0 +1,26 @@
+meta {
+  name: Register
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://webquizlaravel.test/api/register
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: Bearer 1|QbBXiVwjCjAHZDtLSjrQn6FniPNvDmgyNPc3zvoAb7de12fa
+}
+
+body:json {
+  {
+    "name": "Gabriel",
+    "email": "gabriel@test.com",
+    "password": "gabriel1234",
+    "password_confirmation": "gabriel1234"
+  }
+}

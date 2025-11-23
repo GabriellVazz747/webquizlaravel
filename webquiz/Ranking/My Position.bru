@@ -1,0 +1,16 @@
+meta {
+  name: My Position
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://webquizlaravel.test/api/ranking
+  body: none
+  auth: inherit
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer {{token}}
+}

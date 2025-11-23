@@ -1,0 +1,18 @@
+meta {
+  name: Start Quiz
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://webquizlaravel.test/api/quizzes/start
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "theme": "matematica"
+  }
+  
+}
