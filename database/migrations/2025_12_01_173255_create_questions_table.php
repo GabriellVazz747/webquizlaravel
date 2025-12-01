@@ -13,10 +13,8 @@ return new class extends Migration
     {
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
-            $table->string('title');               // título da pergunta
-            $table->text('explanation')->nullable(); // explicação opcional
-            $table->integer('difficulty');         // dificuldade (1 a 3)
-            $table->timestamps();                  // created_at / updated_at
+            $table->text('text');
+            $table->timestamps();
         });
     }
 

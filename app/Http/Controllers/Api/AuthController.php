@@ -1,53 +1,56 @@
 <?php
+
 namespace App\Http\Controllers\Api;
 
-use Illuminate\Http\Request;
-use App\Http\Requests\RegisterRequest;
-use App\Http\Requests\LoginRequest;
+use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Auth;
 
-class AuthController
+class AuthController extends Controller
 {
-    public function register(RegisterRequest $req)
+    public function register(Request $request)
     {
-        $data = $req->validated();
-
-        $user = User::create([
-            'name'=>$data['name'],
-            'email'=>$data['email'],
-            'password'=>bcrypt($data['password']),
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6|confirmed',
         ]);
 
-        $token = $user->createToken('api-token')->plainTextToken;
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
 
-        return response()->json(['user' => $user, 'token' => $token], 201);
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token,
+        ], 201);
     }
 
-    public function login(LoginRequest $req)
+    // Login
+    public function login(Request $request)
     {
-        $data = $req->validated();
-
-        $user = User::where('email', $data['email'])->first();
-
-        if (!$user || !Hash::check($data['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Credenciais inválidas.']
-            ]);
+        if (!Auth::attempt($request->only('email', 'password'))) {
+            return response()->json(['message' => 'Credenciais inválidas'], 401);
         }
 
-        $user->tokens()->delete();
+        $user = User::where('email', $request->email)->firstOrFail();
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-        $token = $user->createToken('api-token')->plainTextToken;
-
-        return response()->json(['user'=>$user,'token'=>$token]);
+        return response()->json([
+            'user' => $user,
+            'token' => $token,
+        ]);
     }
 
-    public function logout(Request $req)
+    public function logout(Request $request)
     {
-        $req->user()->currentAccessToken()->delete();
-
-        return response()->json(['message' => 'Logout efetuado']);
+        $request->user()->currentAccessToken()->delete();
+        return response()->json(['message' => 'Logout realizado com sucesso']);
     }
 }

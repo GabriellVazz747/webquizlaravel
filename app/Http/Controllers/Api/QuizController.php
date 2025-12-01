@@ -1,68 +1,56 @@
 <?php
+
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
+use App\Models\Question;
+use App\Models\QuizResult;
+use App\Models\User;
 use Illuminate\Http\Request;
-use App\Http\Requests\AnswerRequest;
-use App\Services\QuizService;
-use App\Http\Resources\QuizResource;
-use App\Http\Resources\QuestionResource;
-use App\Models\Quiz;
 
-class QuizController
+class QuizController extends Controller
 {
-    protected $service;
-
-    public function __construct(QuizService $service)
+    public function index()
     {
-        $this->service = $service;
+        $questions = Question::with('options')
+                    ->inRandomOrder()
+                    ->limit(10)
+                    ->get();
+
+        return response()->json($questions);
     }
 
-    public function start(Request $req)
+    public function store(Request $request)
     {
-        $quiz = $this->service->startQuizForUser($req->user());
-        $first = $this->service->firstQuestionForQuiz($quiz);
-
-        return response()->json([
-            'quiz' => new QuizResource($quiz),
-            'first_question' => new QuestionResource($first)
-        ], 201);
-    }
-
-    public function show(Request $req, Quiz $quiz)
-    {
-        abort_if($quiz->user_id !== $req->user()->id, 403);
-
-        $questions = $this->service->questionsForQuiz($quiz);
-
-        return response()->json([
-            'quiz' => new QuizResource($quiz->fresh()),
-            'questions' => QuestionResource::collection($questions)
+        $request->validate([
+            'score' => 'required|integer',
+            'time_seconds' => 'required|integer'
         ]);
-    }
 
-    public function answer(AnswerRequest $req, Quiz $quiz)
-    {
-        abort_if($quiz->user_id !== $req->user()->id, 403);
-
-        $res = $this->service->recordAnswer(
-            $quiz,
-            $req->question_id,
-            $req->alternative_id,
-            $req->time_taken ?? null
-        );
-
-        return response()->json($res);
-    }
-
-    public function finish(Request $req, Quiz $quiz)
-    {
-        abort_if($quiz->user_id !== $req->user()->id, 403);
-
-        $this->service->finishQuiz($quiz);
-
-        return response()->json([
-            'quiz' => new QuizResource($quiz->fresh()),
-            'answers' => $quiz->answers()->get()
+        $result = QuizResult::create([
+            'user_id' => $request->user()->id,
+            'score' => $request->score,
+            'time_seconds' => $request->time_seconds
         ]);
+
+        return response()->json(['message' => 'Resultado salvo!', 'data' => $result], 201);
+    }
+
+    public function ranking()
+    {
+        $ranking = QuizResult::with('user')
+            ->orderByDesc('score')
+            ->orderBy('time_seconds')
+            ->limit(10)
+            ->get()
+            ->map(function ($result) {
+                return [
+                    'name' => $result->user->name,
+                    'score' => $result->score,
+                    'time' => gmdate("i:s", $result->time_seconds) // Converte segundos para 00:00
+                ];
+            });
+
+        return response()->json($ranking);
     }
 }

@@ -1,0 +1,56 @@
+import { createRouter, createWebHistory } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
+
+const Login = () => import('../pages/Login.vue');
+const Register = () => import('../pages/Register.vue');
+const Dashboard = () => import('../pages/Dashboard.vue');
+const Quiz = () => import('../pages/Quiz.vue');
+const Result = () => import('../pages/Result.vue');
+
+const routes = [
+    {
+        path: '/login',
+        name: 'Login',
+        component: Login
+    },
+    {
+        path: '/register',
+        name: 'Register',
+        component: Register
+    },
+    {
+        path: '/',
+        name: 'Dashboard',
+        component: Dashboard,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/quiz',
+        name: 'Quiz',
+        component: Quiz,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/result',
+        name: 'Result',
+        component: Result,
+        meta: { requiresAuth: true }
+    }
+];
+
+const router = createRouter({
+    history: createWebHistory(),
+    routes
+});
+
+router.beforeEach((to, from, next) => {
+    const authStore = useAuthStore();
+
+    if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+        next('/login');
+    } else {
+        next();
+    }
+});
+
+export default router;
